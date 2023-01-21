@@ -23,10 +23,39 @@ def rgb2gray(img):
         return
     
     """ Your code starts here """
-    
+    height = img.shape[0]
+    width = img.shape[1]
+
+    img_gray = np.zeros((height, width), dtype = np.uint8)
+    for i in range(height):
+        for j in range(width):
+            img_gray[i, j] = int(img[i, j, 0] * 0.299) + int(img[i, j, 1] * 0.587) + int(img[i, j, 2] * 0.114)
     """ Your code ends here """
     return img_gray
 
+def flip_filter(filter):
+    height = filter.shape[0]
+    width = filter.shape[1]
+
+    filter_flipped = np.zeros((height, width), dtype = np.float)
+    for i in range(height):
+        for j in range(width):
+            filter_flipped[i, j] = filter[height - i - 1, width - j - 1]
+    return filter_flipped
+
+def cross_correlation(img, filter):
+    height, width = img.shape[:2]
+    filter_height, filter_width = filter.shape[:2]
+    img_filtered = np.zeros((height, width), dtype = np.float)
+
+    img = pad_zeros(img, filter_height // 2, filter_height // 2, filter_width // 2, filter_width // 2)
+
+    for i in range(0, height):
+        for j in range(0, width):
+            for k in range(0, filter_height):
+                for l in range(0, filter_width):
+                    img_filtered[i, j] += img[i + k, j + l] * filter[k, l]
+    return img_filtered
 
 def gray2grad(img):
     """
@@ -54,6 +83,10 @@ def gray2grad(img):
     
 
     """ Your code starts here """
+    img_grad_h = cross_correlation(img, flip_filter(sobelh))
+    img_grad_v = cross_correlation(img, flip_filter(sobelv))
+    img_grad_d1 = cross_correlation(img, flip_filter(sobeld1))
+    img_grad_d2 = cross_correlation(img, flip_filter(sobeld2))
 
     """ Your code ends here """
     return img_grad_h, img_grad_v, img_grad_d1, img_grad_d2
@@ -79,9 +112,11 @@ def pad_zeros(img, pad_height_bef, pad_height_aft, pad_width_bef, pad_width_aft)
     img_pad = np.zeros((new_height, new_width)) if len(img.shape) == 2 else np.zeros((new_height, new_width, img.shape[2]))
 
     """ Your code starts here """
-
+    for i in range(0, height):
+        for j in range(0, width):
+            img_pad[i + pad_height_bef, j + pad_width_bef] = img[i, j]
     """ Your code ends here """
-    return img_pad
+    return img_pad.astype(img.dtype)
 
 
 
