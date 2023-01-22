@@ -120,8 +120,25 @@ def pad_zeros(img, pad_height_bef, pad_height_aft, pad_width_bef, pad_width_aft)
 
 
 
-
 ##### Part 2: Normalized Cross Correlation #####
+def norm_single(grid):
+    res = 0
+    h, w = grid.shape[:2]
+    for i in range(h):
+        for j in range(w):
+            res += (grid[i, j])**2
+    return math.sqrt(res)
+
+def norm_rgb(grid):
+    res_r, res_g, res_b = 0, 0, 0
+    h, w = grid.shape[:2]
+    for i in range(h):
+        for j in range(w):
+            res_r += (grid[i, j, 0])**2
+            res_g += (grid[i, j, 1])**2
+            res_b += (grid[i, j, 2])**2
+    return math.sqrt(res_r + res_g + res_b)
+
 def normalized_cross_correlation(img, template):
     """
     10 points.
@@ -137,8 +154,34 @@ def normalized_cross_correlation(img, template):
     Wo = Wi - Wk + 1
 
     """ Your code starts here """
+    img = img.astype('float64')
+    template = template.astype('float64')
 
+    # greyscale
+    response = np.zeros((Ho, Wo))
+    if len(img.shape) != 3:
+        filter_norm = norm_single(template)
+        for i in range(Ho):
+            for j in range(Wo):
+                image_norm = norm_single(img[i: i + Hk, j: j + Wk])
+                for k in range(Hk):
+                    for l in range(Wk):
+                        response[i, j] += (img[i + k, j + l] * template[k, l])
+                response[i, j] /= (image_norm * filter_norm)
+    
+    # RGB
+    else:
+        filter_norm = norm_rgb(template)
+        for i in range(Ho):
+            for j in range(Wo):
+                image_norm = norm_rgb(img[i: i + Hk, j: j + Wk:])
+                for m in range(3):
+                    for k in range(Hk):
+                        for l in range(Wk):
+                            response[i, j] += img[i + k, j + l, m] * template[k, l, m]
+                response[i, j] /= (image_norm * filter_norm)
     """ Your code ends here """
+    
     return response
 
 
@@ -157,8 +200,13 @@ def normalized_cross_correlation_fast(img, template):
     Wo = Wi - Wk + 1
 
     """ Your code starts here """
+    img = img.astype('float64')
+    template = template.astype('float64')
+
+    
 
     """ Your code ends here """
+    response = np.zeros((Ho, Wo))
     return response
 
 
@@ -179,6 +227,7 @@ def normalized_cross_correlation_matrix(img, template):
     Wo = Wi - Wk + 1
 
     """ Your code starts here """
+    response = np.zeros((Ho, Wo))
 
     """ Your code ends here """
     return response
