@@ -157,7 +157,7 @@ def normalized_cross_correlation(img, template):
     img = img.astype('float64')
     template = template.astype('float64')
 
-    # greyscale
+    # Single Channel
     response = np.zeros((Ho, Wo))
     if len(img.shape) != 3:
         filter_norm = norm_single(template)
@@ -203,10 +203,33 @@ def normalized_cross_correlation_fast(img, template):
     img = img.astype('float64')
     template = template.astype('float64')
 
+    # Single Channel
+    response = np.zeros((Ho, Wo))
+
+    if len(img.shape) != 3:
+        filter_norm = norm_single(template)
+        for i in range(Ho):
+            for j in range(Wo):
+                image_norm = norm_single(img[i: i + Hk, j: j + Wk])
+                img_box, template_box = img[i: i + Hk, j: j + Wk], template
+                res = np.multiply(img_box, template_box)
+                response[i, j] += np.sum(res)
+                response[i, j] /= (image_norm * filter_norm)
     
+    # RGB
+    else:
+        filter_norm = norm_rgb(template)
+        for i in range(Ho):
+            for j in range(Wo):
+                image_norm = norm_rgb(img[i: i + Hk, j: j + Wk:])
+                for k in range(3):
+                    img_box, template_box = img[i: i + Hk, j: j + Wk, k], template[:, :, k]
+                    res = np.multiply(img_box, template_box)
+                    res = np.sum(res)
+                    response[i, j] += res
+                response[i, j] /= (image_norm * filter_norm)
 
     """ Your code ends here """
-    response = np.zeros((Ho, Wo))
     return response
 
 
