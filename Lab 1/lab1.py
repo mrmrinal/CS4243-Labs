@@ -252,11 +252,50 @@ def normalized_cross_correlation_matrix(img, template):
     """ Your code starts here """
     response = np.zeros((Ho, Wo))
 
+    #convert the matrix to the intended shape
+    if len(img.shape) != 3:
+        reshaped_template = []
+        for i in range(len(template)):
+            for j in range(len(template[0])):
+                reshaped_template += template[i][j]
+    
+
     """ Your code ends here """
     return response
 
 
 ##### Part 3: Non-maximum Suppression #####
+def find_global_max(response):
+    current_max = 0
+    x_coord = -1
+    y_coord = -1
+    for i in range(len(response)):
+        for j in range(len(response[0])):
+            if response[i][j] > current_max:
+                x_coord = i
+                y_coord = j
+                current_max = response[i][j]
+    return current_max, x_coord, y_coord
+
+
+def suppress_threshold(response, threshold):
+    for i in range(len(response)):
+        for j in range(len(response[0])):
+            if response[i][j] < threshold:
+                response[i][j] = 0
+    return response
+
+
+def window_suppression(response, suppress_range, x_coord, y_coord):
+    H_range, W_range = suppress_range
+    for i in range(x_coord - H_range, x_coord + H_range):
+        for j in range(y_coord - W_range, y_coord + W_range):
+            try:
+                response[i][j] = 0
+            except:
+                continue
+    return response
+
 
 def non_max_suppression(response, suppress_range, threshold=None):
     """
@@ -276,9 +315,23 @@ def non_max_suppression(response, suppress_range, threshold=None):
     """
     
     """ Your code starts here """
+    # suppress
+    response = suppress_threshold(response, threshold)
+    local_minimums = []
+    # find minimum 
+    current_max, x_coord, y_coord = find_global_max(response)
+
+    while current_max != 0:
+        # make the area around the current_maximum set to 0
+        response = window_suppression(response, suppress_range,x_coord, y_coord)
+        local_minimums.append((x_coord,y_coord))
+        current_max, x_coord, y_coord = find_global_max(response)
 
     """ Your code ends here """
-    return res
+
+    for i,j in local_minimums:
+        response[i][j] = 1
+    return response
 
 ##### Part 4: Question And Answer #####
     
