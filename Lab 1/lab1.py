@@ -232,7 +232,48 @@ def normalized_cross_correlation_fast(img, template):
     """ Your code ends here """
     return response
 
+def reshape_template(template):
+    if len(template.shape) == 2:
+        return np.column_stack([template.flatten()])
+    else:
+        h = template.shape[0]
+        w = template.shape[1]
+        c = template.shape[2]
 
+        res = []
+        for i in range(c):
+            for j in range(h):
+                for k in range(w):
+                    res.append(template[j, k, i])
+        return np.column_stack([np.array(res)])
+
+def reshape_image(img, template):
+    Hi, Wi = img.shape[:2]
+    Hk, Wk = template.shape[:2]
+    Ho = Hi - Hk + 1
+    Wo = Wi - Wk + 1
+
+    res = []
+
+    # greyscale
+    if len(img.shape) != 3:
+        for i in range(Ho):
+            for j in range(Wo):
+                res.append(img[i:i+Hk, j:j+Wk].flatten())
+    # rgb
+    else:
+        temp = []
+        c = img.shape[2]
+        for i in range(Ho):
+            for j in range(Wo):
+                if temp != []:
+                    res.append(temp)
+                temp = []
+                for k in range(c):
+                    temp += img[i:i+Hk, j:j+Wk, k].flatten().tolist()
+        res.append(temp)
+    
+    return np.array(res)
 
 
 def normalized_cross_correlation_matrix(img, template):
@@ -253,12 +294,35 @@ def normalized_cross_correlation_matrix(img, template):
     response = np.zeros((Ho, Wo))
 
     #convert the matrix to the intended shape
+    img = img.astype('float64')
+    template = template.astype('float64')
+
+    # Single Channel
     if len(img.shape) != 3:
-        reshaped_template = []
-        for i in range(len(template)):
-            for j in range(len(template[0])):
-                reshaped_template += template[i][j]
+        reshaped_template = reshape_template(template)
+        reshaped_img = reshape_image(img, template)
+        filter_norm = norm_single(template)
+        matrix = np.matmul(reshaped_img, reshaped_template)
+
+        response = matrix.reshape(Ho, Wo)
+        for i in range(Ho):
+            for j in range(Wo):
+                image_norm = norm_single(img[i: i + Hk, j: j + Wk])
+                response[i, j] /= (image_norm * filter_norm)
+
+    # RGB
+    else:
+        reshaped_template = reshape_template(template)
+        reshaped_img = reshape_image(img, template)
+        filter_norm = norm_rgb(template)
+        matrix = np.matmul(reshaped_img, reshaped_template)
     
+        response = matrix.reshape(Ho, Wo)
+        
+        for i in range(Ho):
+            for j in range(Wo):
+                image_norm = norm_rgb(img[i: i + Hk, j: j + Wk])
+                response[i, j] /= (image_norm * filter_norm)
 
     """ Your code ends here """
     return response
