@@ -304,11 +304,11 @@ def normalized_cross_correlation_matrix(img, template):
         filter_norm = norm_single(template)
         matrix = np.matmul(reshaped_img, reshaped_template)
 
-        response = matrix.reshape(Ho, Wo)
-        for i in range(Ho):
-            for j in range(Wo):
-                image_norm = norm_single(img[i: i + Hk, j: j + Wk])
-                response[i, j] /= (image_norm * filter_norm)
+        normalization_term = np.sqrt(np.matmul(reshaped_img ** 2, np.ones((Hk * Wk, 1)))) * filter_norm
+        response = matrix / normalization_term
+        response = response.reshape(Ho, Wo)
+
+        
 
     # RGB
     else:
@@ -317,12 +317,9 @@ def normalized_cross_correlation_matrix(img, template):
         filter_norm = norm_rgb(template)
         matrix = np.matmul(reshaped_img, reshaped_template)
     
-        response = matrix.reshape(Ho, Wo)
-        
-        for i in range(Ho):
-            for j in range(Wo):
-                image_norm = norm_rgb(img[i: i + Hk, j: j + Wk])
-                response[i, j] /= (image_norm * filter_norm)
+        normalization_term = np.sqrt(np.matmul(reshaped_img ** 2, np.ones((Hk * Wk * 3, 1)))) * filter_norm
+        response = matrix / normalization_term
+        response = response.reshape(Ho, Wo)
 
     """ Your code ends here """
     return response
