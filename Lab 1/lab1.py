@@ -411,7 +411,37 @@ def normalized_cross_correlation_ms(img, template):
     Wo = Wi - Wk + 1
 
     """ Your code starts here """
+    img = img.astype('float64')
+    template = template.astype('float64')
 
+    # Single Channel
+    response = np.zeros((Ho, Wo))
+
+    template = template - np.mean(template)
+    
+    if len(img.shape) != 3:
+        filter_norm = norm_single(template)
+        for i in range(Ho):
+            for j in range(Wo):
+                image_norm = norm_single(img[i: i + Hk, j: j + Wk] - np.mean(img[i: i + Hk, j: j + Wk]))
+                for k in range(Hk):
+                    for l in range(Wk):
+                        response[i, j] += ((img[i + k, j + l] - np.mean(img[i: i + Hk, j: j + Wk])) * template[k, l])
+                response[i, j] /= (image_norm * filter_norm)
+    
+    # RGB
+    else:
+        template = template - [np.mean(template[:,:,0]), np.mean(template[:,:,1]), np.mean(template[:,:,2])]
+        filter_norm = norm_rgb(template)
+        for i in range(Ho):
+            for j in range(Wo):
+                img_box = img[i: i + Hk, j: j + Wk:]
+                image_norm = norm_rgb(img_box - [np.mean(img_box[:,:,0]), np.mean(img_box[:,:,1]), np.mean(img_box[:,:,2])])
+                for m in range(3):
+                    for k in range(Hk):
+                        for l in range(Wk):
+                            response[i, j] += (img[i + k, j + l, m] - np.mean(img_box[:,:,m])) * template[k, l, m]
+                response[i, j] /= (image_norm * filter_norm)
     """ Your code ends here """
     return response
 
