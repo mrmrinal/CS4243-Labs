@@ -24,48 +24,15 @@ def make_gaussian_kernel(ksize, sigma):
     
     # YOUR CODE HERE
     kernel = np.zeros((ksize, ksize))
-    half_size = ksize // 2
-    x_total = 0
-    y_total = 0
-    # starts from the origin, hence we move the range
-    # even size
-    if not (ksize % 2):
-        
-        for i in range(-half_size, half_size):
-            for j in range(-half_size, half_size):
-                x_total = x_total + i
-                y_total = y_total + j
-        
-        x_mean = math.floor(x_total / (ksize ** 2))
-        y_mean = math.floor(x_total / (ksize ** 2))
-        
 
-        for i in range(-half_size, half_size):
-            row = []
-            for j in range(-half_size, half_size):
-                x = i
-                y = j
-                kernel[i,j] = math.exp(((x - x_mean) ** 2 + (y - y_mean) ** 2) / (-2 * sigma ** 2))
+    for i in range(ksize):
+        for j in range(ksize):
+            kernel[i][j] = math.exp(((i-ksize//2)**2+(j-ksize//2)**2)/(-2*sigma**2))
+    kernel = kernel/np.sum(kernel)
 
-    else:
+    return kernel
 
-        for i in range(-half_size, half_size + 1):
-            for j in range(-half_size, half_size + 1):
-                x_total = x_total + i
-                y_total = y_total + j
-        
-        x_mean = math.floor(x_total / (ksize ** 2))
-        y_mean = math.floor(x_total / (ksize ** 2))
 
-        for i in range(-half_size, half_size + 1):
-            row = []
-            for j in range(-half_size, half_size + 1):
-                x = i
-                y = j
-                kernel[i,j] = math.exp(((x - x_mean) ** 2 + (y - y_mean) ** 2) / (-2 * sigma ** 2))
-            
-    print(kernel.sum())
-    return kernel / kernel.sum()
 
 # GIVEN
 def cs4243_filter(image, kernel):
