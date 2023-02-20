@@ -152,36 +152,6 @@ def estimate_gradients(original_img, display=True):
     d_mag = np.sqrt(dx**2 + dy**2)
     d_angle = np.arctan2(dy, dx)
     
-    '''
-    HINT:
-    In the lecture, 
-    
-    Sx =  1  0 -1
-          2  0 -2
-          1  0 -1
-          
-    Sy =  1  2  1
-          0  0  0
-         -1 -2 -1
-         
-    Here:
-    
-    Kx = [[ 1,  2,  1],
-          [ 0,  0,  0],
-          [-1, -2, -1]]
-    
-    Ky = [[ 1,  0, -1],
-          [ 2,  0, -2],
-          [ 1,  0, -1]]
-    
-    
-          
-    This is because x direction is the downward line
-    
- 
-    '''
-
-    # END
     if display:
     
         fig2, axes_array = plt.subplots(1, 4)
@@ -219,6 +189,34 @@ def non_maximum_suppression_interpol(d_mag, d_angle, display=True):
     d_angle_180 = d_angle * 180/np.pi
     
     # YOUR CODE HERE
+    H, W = d_mag.shape
+
+    for i in range(1, H-1):
+        for j in range(1, W-1):
+            before = 0
+            after = 0
+            angle = d_angle_180[i, j]
+
+            if angle >=0 and angle < 45 or angle >= -180 and angle < -135:
+                tan = np.tan(angle*np.pi/180)
+                before = tan*(d_mag[i-1, j-1] - d_mag[i-1, j]) + d_mag[i-1, j-1]
+                after = tan*(d_mag[i+1, j+1] - d_mag[i+1, j]) + d_mag[i+1, j+1]
+            elif angle >= 45 and angle < 90 or angle >= -135 and angle < -90:
+                tan = np.tan((90-angle)*np.pi/180) if angle >= 45 else np.tan((90+angle)*np.pi/180)
+                before = tan*(d_mag[i-1, j-1] - d_mag[i, j-1]) + d_mag[i-1, j-1]
+                after = tan*(d_mag[i+1, j+1] - d_mag[i, j+1]) + d_mag[i+1, j+1]
+            elif angle >= 90 and angle < 135 or angle >= -90 and angle < -45:
+                tan = np.tan((angle-90)*np.pi/180) if angle >= 90 else np.tan((angle+90)*np.pi/180)
+                before = tan*(d_mag[i-1, j+1] - d_mag[i, j+1]) + d_mag[i, j+1]
+                after = tan*(d_mag[i+1, j-1] - d_mag[i, j-1]) + d_mag[i, j-1]
+            elif angle >= 135 and angle < 180 or angle >= -45 and angle < 0:
+                tan = np.tan((180-angle)*np.pi/180) if angle >= 135 else np.tan(angle*np.pi/180)
+                before = tan*(d_mag[i-1, j+1] - d_mag[i-1, j]) + d_mag[i-1, j]
+                after = tan*(d_mag[i+1, j-1] - d_mag[i+1, j]) + d_mag[i+1, j]
+            
+            if d_mag[i, j] > before and d_mag[i, j] > after:
+                out[i, j] = d_mag[i, j]
+    
 
     # END
     if display:
@@ -269,6 +267,29 @@ def non_maximum_suppression(d_mag, d_angle, display=True):
     d_angle_180 = d_angle * 180/np.pi
  
     # YOUR CODE HERE
+    H, W = d_mag.shape
+
+    for i in range(1, H-1):
+        for j in range(1, W-1):
+            angle = d_angle_180[i, j]
+            before = 0
+            after = 0
+            
+            if angle >= -22.5 and angle < 22.5 or angle >= 157.5 and angle < 180 or angle >= -180 and angle < -157.5:
+                before = d_mag[i+1, j]
+                after = d_mag[i-1, j]
+            elif angle >= 22.5 and angle < 67.5 or angle >= -157.5 and angle < -112.5:
+                before = d_mag[i+1, j-1]
+                after = d_mag[i-1, j-1]
+            elif angle >= 67.5 and angle < 112.5 or angle >= -112.5 and angle < -67.5:
+                before = d_mag[i, j-1]
+                after = d_mag[i, j+1]
+            else:
+                before = d_mag[i+1, j-1]
+                after = d_mag[i-1, j+1]
+            if d_mag[i, j] > before and d_mag[i, j] > after:
+                out[i, j] = d_mag[i, j]
+            
 
     # END
     if display:
