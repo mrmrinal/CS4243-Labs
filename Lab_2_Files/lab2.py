@@ -413,7 +413,33 @@ def hough_vote_lines(img):
     :return thetas: theta values array
     '''
     # YOUR CODE HERE
+    H = img.shape[0]
+    W = img.shape[1]
 
+    d_max = np.sqrt(H**2 + W**2)
+    d_min = -d_max
+    d_step = 1
+
+    t_min = 0
+    t_max = np.pi
+    t_step = np.pi/180
+
+    distances = np.arange(d_min, d_max, d_step)
+    thetas = np.arange(t_min, t_max, t_step)
+
+    dist_lines = math.ceil((d_max - d_min)/d_step)
+    theta_lines = math.ceil((t_max - t_min)/t_step)
+
+    A = np.zeros((dist_lines, theta_lines), dtype=np.int)
+
+    for i in range(H):
+        for j in range(W):
+            if img[i, j] > 0:
+                for k in range(len(thetas)):
+                    theta = thetas[k]
+                    d = i * np.cos(theta) + j * np.sin(theta)
+                    d_idx = np.argmin(np.abs(distances - d))
+                    A[d_idx, k] += 1
     # END
             
     return A, distances, thetas
