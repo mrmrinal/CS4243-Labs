@@ -320,7 +320,22 @@ def double_thresholding(inp, perc_weak=0.1, perc_strong=0.3, display=True):
     weak_edges = strong_edges = None
     
     # YOUR CODE HERE
-    
+    min_val = np.min(inp)
+    max_val = np.max(inp)
+
+    r = max_val - min_val
+
+    high_threshold = min_val + perc_strong * r
+    low_threshold = min_val + perc_weak * r
+
+    strong_edges = inp > high_threshold
+    weak_edges = np.zeros(inp.shape, dtype=bool)
+
+    for i in range(inp.shape[0]):
+        for j in range(inp.shape[1]):
+            if inp[i, j] > low_threshold and inp[i, j] < high_threshold:
+                weak_edges[i, j] = inp[i, j]
+
     # END
     
     if display:
@@ -360,11 +375,28 @@ def edge_linking(weak, strong, n=200, display=True):
     out = None
     
     # YOUR CODE HERE
+    out = strong.copy()
+    H = out.shape[0]
+    W = out.shape[1]
+
+    x_weak, y_weak = np.where(weak == 1)
+
+
+    for i in range(n):
+        for j in range(len(x_weak)):
+            x = x_weak[j]
+            y = y_weak[j]
+            if x > 0 and x < H-1 and y > 0 and y < W-1:
+                if strong[x-1, y-1] == 1 or strong[x-1, y] == 1 or strong[x-1, y+1] == 1 or strong[x, y-1] == 1 or strong[x, y+1] == 1 or strong[x+1, y-1] == 1 or strong[x+1, y] == 1 or strong[x+1, y+1] == 1:
+                    out[x, y] = 1
+                    weak[x, y] = 1
+        strong = out.copy()
+
     
     # END
     if display:
         _ = plt.figure(figsize=(10,10))
-        plt.imshow(s)
+        plt.imshow(out)
         plt.title("Edge image")
     return out
 
