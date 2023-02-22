@@ -506,13 +506,35 @@ def hough_vote_circles(img, radius = None):
     else:
         [R_min,R_max] = radius
     
+    A = np.zeros((R_max - R_min, h, w))
+
+    r_array = np.arange(R_min, R_max, 1)
+    x_array = np.arange(0, w, 1)
+    y_array =np.arange(0, h, 1)
+
+    
+    for i in range(h):
+        for j in range(w):
+            if img[i, j] > 0:
+                # all possible theta values
+                for r in range(len(r_array)):
+                    
+                    rr, cc = circle_perimeter(i,j,r_array[r])
+
+                    for k in range(len(rr)):
+                        try:
+                            A[r_array[r], rr[k],cc[k]] += 1
+                        except:
+                            continue
+
+
+
     # YOUR CODE HERE
     #1. Initializing accumulator array A.
     #   A should have three dimensions, in this order: radius, x coordinate, y coordinate
     #   Remember padding
-   
+
     #2. Extracting all edge coordinates
- 
     
     #3. For each radius:
 
@@ -528,7 +550,7 @@ def hough_vote_circles(img, radius = None):
 
     # END
    
-    return A, R, X, Y
+    return A, r_array, x_array, y_array
 
 ##################### TASK 4 ######################
 
