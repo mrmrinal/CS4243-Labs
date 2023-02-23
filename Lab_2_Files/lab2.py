@@ -468,7 +468,7 @@ def find_peak_params(hspace, params_list,  window_size=1, threshold=0.5):
         "The Hough space dimension does not match the number of parameters"
     for i in range(len(params_list)):
         assert hspace.shape[i] == len(params_list[i]), \
-            f"Parameter length does not match size of the corresponding dimension:{len(params_list[i])} vs {hspace.shape[i]}"
+            f"Parameter length does not match size of the corresponding dimension:{len(params_list[i])} vs {hspace.shape[i]} {i}"
     peaks_indices = peak_local_max(hspace.copy(), exclude_border=False, threshold_rel=threshold, min_distance=window_size)
     peak_values = np.array([hspace[tuple(peaks_indices[j])] for j in range(len(peaks_indices))])
     res = []
@@ -505,27 +505,37 @@ def hough_vote_circles(img, radius = None):
         R_min = 3
     else:
         [R_min,R_max] = radius
-    
-    A = np.zeros((R_max - R_min, h, w))
 
-    r_array = np.arange(R_min, R_max, 1)
+    
+    # pad the array, to make w and h bigger?
+    
+    A = np.zeros((R_max, w, h))
+    
+
+
+    r_array = np.arange(0, R_max, 1)
     x_array = np.arange(0, w, 1)
     y_array =np.arange(0, h, 1)
+    print(len(x_array))
+    print(A.shape)
 
     
-    for i in range(h):
-        for j in range(w):
-            if img[i, j] > 0:
-                # all possible theta values
-                for r in range(len(r_array)):
-                    
-                    rr, cc = circle_perimeter(i,j,r_array[r])
+    for i in range(len(y_array)):
+        for j in range(len(x_array)):
+            try:
+                if img[i, j] > 0:
+                    # all possible theta values
+                    for r in range(R_min,R_max):
+                        
+                        rr, cc = circle_perimeter(i,j,r_array[r])
 
-                    for k in range(len(rr)):
-                        try:
-                            A[r_array[r], rr[k],cc[k]] += 1
-                        except:
-                            continue
+                        for k in range(len(rr)):
+                            try:
+                                A[r_array[r], rr[k],cc[k]] += 1
+                            except:
+                                continue
+            except:
+                continue
 
 
 
