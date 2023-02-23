@@ -473,8 +473,10 @@ def find_peak_params(hspace, params_list,  window_size=1, threshold=0.5):
     peak_values = np.array([hspace[tuple(peaks_indices[j])] for j in range(len(peaks_indices))])
     res = []
     res.append(peak_values)
+    print(peak_values)
     for i in range(len(params_list)):
         res.append(params_list[i][peaks_indices.T[i]])
+        
     return res
 
 
@@ -498,6 +500,7 @@ def hough_vote_circles(img, radius = None):
     :return Y: y-coordinate values array
     '''
     
+    
     # Check the radius range
     h, w = img.shape[:2]    
     if radius == None:
@@ -506,61 +509,49 @@ def hough_vote_circles(img, radius = None):
     else:
         [R_min,R_max] = radius
 
-    
-    # pad the array, to make w and h bigger?
-    
-    A = np.zeros((R_max, w, h))
-    
+    R = np.arange(R_min, R_max + 1/2)
+    X = np.arange(0, h  + 1/2, 1)
+    Y = np.arange(0, w  + 1/2, 1)
 
+    A = np.zeros((len(R), len(X), len(Y)))
 
-    r_array = np.arange(0, R_max, 1)
-    x_array = np.arange(0, w, 1)
-    y_array =np.arange(0, h, 1)
-    print(len(x_array))
-    print(A.shape)
-
-    
-    for i in range(len(y_array)):
-        for j in range(len(x_array)):
-            try:
-                if img[i, j] > 0:
-                    # all possible theta values
-                    for r in range(R_min,R_max):
-                        
-                        rr, cc = circle_perimeter(i,j,r_array[r])
-
-                        for k in range(len(rr)):
-                            try:
-                                A[r_array[r], rr[k],cc[k]] += 1
-                            except:
-                                continue
-            except:
-                continue
-
-
-
-    # YOUR CODE HERE
-    #1. Initializing accumulator array A.
-    #   A should have three dimensions, in this order: radius, x coordinate, y coordinate
-    #   Remember padding
-
+   
     #2. Extracting all edge coordinates
-    
-    #3. For each radius:
+    edges = []
 
+    for r in range(0, h):
+        for c in range(0, w):
+            if img[r][c] > 0:
+                edges.append((r, c))
+
+    #3. For each radius:
+    for rad_idx in range(0, len(R)):
+        rad = R[rad_idx]
         
         #3.1 Creating a circular mask
-
+        rr, cc = circle_perimeter(0, 0, int(rad))
         
         #3.2 Compute the number of non_zero values on the mask
- 
-        
         #3.3 For each edge point:
         #    Center the mask over that point and update the accumulator array
 
+        for (r, c) in edges:
+            current_rr = rr + r
+            current_cc = cc + c
+            for p in range(0, len(rr)):
+                try:
+                    # code change for coin problem
+                    # if rad < 20:
+                    #     A[rad_idx][current_rr[p]][current_cc[p]] += 0.5
+
+                    A[rad_idx][current_rr[p]][current_cc[p]] += 1
+                except:
+                    pass
+
     # END
    
-    return A, r_array, x_array, y_array
+    return A, R, X, Y
+
 
 ##################### TASK 4 ######################
 
@@ -590,42 +581,36 @@ def hough_vote_circles_grad(img, d_angle, radius = None):
         R_min = 3
     else:
         [R_min,R_max] = radius
-
-    print(d_angle)
     
-    # YOUR CODE HERE
-     # pad the array, to make w and h bigger?
-    
-    A = np.zeros((R_max, w, h))
-    
+    R = np.arange(0, R_max + 1/2)
+    X = np.arange(0, h + 1/2)
+    Y = np.arange(0, w + 1/2)
 
+    num_r = R.shape[0]
+    num_x = X.shape[0]
+    num_y = Y.shape[0]
 
-    r_array = np.arange(0, R_max, 1)
-    x_array = np.arange(0, w, 1)
-    y_array =np.arange(0, h, 1)
-    print(len(x_array))
-    print(A.shape)
+    A = np.zeros((num_r, num_x, num_y))
 
-    
-    for i in range(0,len(y_array)):
-        for j in range(0,len(x_array)):
-            try:
-                if img[i, j] > 0:
-                    orientation = d_angle[i,j]
-                    # all possible theta values
-                    for r in range(R_min,R_max):
+    for r in range(0, h):
+        for c in range(0, w):
+            if img[r][c] > 0:
+                theta = d_angle[r][c]
+                for rad in range(R_min, R_max):
+                    x_offset = np.cos(theta) * rad
+                    y_offset = np.sin(theta) * rad
+                    (r1, c1) = (int(r - x_offset), int(c - y_offset))
+                    (r2, c2) = (int(r + x_offset), int(c + y_offset))
+                    try:
+                        A[rad][r1][c1] += 1
+                    except:
+                        pass
+                    try:
+                        A[rad][r2][c2] += 1
+                    except:
+                        pass
+    return A, R, X, Y
 
-                        a = math.floor(i - r * np.cos(orientation))
-                        b = math.floor(j - r * np.sin(orientation))
-                        try:
-                            A[r_array[r], a, b] += 1
-                        except:
-                            continue
-            except:
-                continue
-
-    # END
-    return A, r_array, x_array, y_array
 
 
 ###############################################
