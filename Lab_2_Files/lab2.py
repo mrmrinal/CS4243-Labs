@@ -590,11 +590,43 @@ def hough_vote_circles_grad(img, d_angle, radius = None):
         R_min = 3
     else:
         [R_min,R_max] = radius
+
+    print(d_angle)
     
     # YOUR CODE HERE
+     # pad the array, to make w and h bigger?
+    
+    A = np.zeros((R_max, w, h))
+    
+
+
+    r_array = np.arange(0, R_max, 1)
+    x_array = np.arange(0, w, 1)
+    y_array =np.arange(0, h, 1)
+    print(len(x_array))
+    print(A.shape)
+
+    
+    for i in range(0,len(y_array)):
+        for j in range(0,len(x_array)):
+            try:
+                if img[i, j] > 0:
+                    orientation = d_angle[i,j]
+                    # all possible theta values
+                    for r in range(R_min,R_max):
+
+                        a = math.floor(i - r * np.cos(orientation))
+                        b = math.floor(j - r * np.sin(orientation))
+                        try:
+                            A[r_array[r], a, b] += 1
+                        except:
+                            continue
+            except:
+                continue
 
     # END
-    return A, R, X, Y
+    return A, r_array, x_array, y_array
+
 
 ###############################################
 """Helper functions: You should not have to touch the following functions.
