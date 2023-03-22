@@ -44,7 +44,28 @@ def harris_corners(img, window_size=3, k=0.04):
     response = np.zeros((H, W))
 
     """ Your code starts here """
-    
+    sobel_x = filters.sobel_v(img)
+    sobel_y = filters.sobel_h(img)
+
+    # calculate x e y derivatives
+    Ix2 = sobel_x ** 2
+    Iy2 = sobel_y ** 2
+
+    Ixy = sobel_x * sobel_y
+
+    # calculate product and second derivatives
+    Sxx = convolve(Ix2, window)
+    Syy = convolve(Iy2, window)
+
+    Sxy = convolve(Ixy, window)
+
+    # calculate determinant and trace
+    det = (Sxx * Syy) - (Sxy ** 2)
+    trace = Sxx + Syy
+
+    # calculate response
+    response = det - k * (trace ** 2)
+
     """ Your code ends here """ 
     
     return response
