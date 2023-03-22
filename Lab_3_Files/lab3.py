@@ -56,10 +56,8 @@ def harris_corners(img, window_size=3, k=0.04):
     # calculate product and second derivatives
     Sxx = convolve(Ix2, window)
     Syy = convolve(Iy2, window)
-
     Sxy = convolve(Ixy, window)
 
-    # calculate determinant and trace
     det = (Sxx * Syy) - (Sxy ** 2)
     trace = Sxx + Syy
 
@@ -88,6 +86,8 @@ def naive_descriptor(patch):
     feature = []
     
     """ Your code starts here """
+    patch = (patch - np.mean(patch)) / np.std(patch)
+    feature = patch.flatten()
     
     """ Your code ends here """
 
@@ -182,6 +182,16 @@ def top_k_matches(desc1, desc2, k=2):
     match_pairs = []
     
     """ Your code starts here """
+    # calculate the Euclidean distance
+    distance = cdist(desc1, desc2, 'euclidean')
+
+    # find the k nearest descriptors
+    for i in range(len(desc1)):
+        # find the index of k nearest descriptors
+        index = np.argsort(distance[i])[:k]
+        # find the distance of k nearest descriptors
+        dist = distance[i][index]
+        match_pairs.append((i, list(zip(index, dist))))
     
     """ Your code ends here """
 
@@ -211,7 +221,12 @@ def ratio_test_match(desc1, desc2, match_threshold):
     top_2_matches = top_k_matches(desc1, desc2)
     
     """ Your code starts here """
-    
+    # find the match pairs
+    for i in range(len(top_2_matches)):
+        ratio = top_2_matches[i][1][0][1] / top_2_matches[i][1][1][1]
+        if ratio < match_threshold:
+            match_pairs.append((top_2_matches[i][0], top_2_matches[i][1][0][0]))
+
     """ Your code ends here """
 
     # Modify this line as you wish
