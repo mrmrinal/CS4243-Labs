@@ -163,7 +163,28 @@ def simple_sift(patch):
     histogram = np.zeros((4,4,8))
     
     """ Your code starts here """
+    # calculate the gradient
+    sobel_x = filters.sobel_v(patch)
+    sobel_y = filters.sobel_h(patch)
+
+    # calculate the magnitude and orientation
+    magnitude = np.sqrt(sobel_x ** 2 + sobel_y ** 2)
+    orientation = np.arctan2(sobel_y, sobel_x)
+
+    # calculate the histogram
+    for i in range(4):
+        for j in range(4):
+            for k in range(8):
+                # calculate the weight
+                weight = magnitude[i * 4:(i + 1) * 4, j * 4:(j + 1) * 4] * weights[i * 4:(i + 1) * 4, j * 4:(j + 1) * 4]
+                # calculate the histogram
+                histogram[i, j, k] = np.sum(weight[orientation[i * 4:(i + 1) * 4, j * 4:(j + 1) * 4] >= (k - 1) * np.pi / 4])
     
+    # normalize the histogram
+    histogram = histogram / np.sum(histogram)
+
+    # flatten the histogram
+    feature = histogram.flatten()
     """ Your code ends here """
 
     return feature
