@@ -571,9 +571,24 @@ def shift_sift_descriptor(desc):
     '''
     
     """ Your code starts here """
+    res = np.reshape(desc, (16,8))
+
+    # keep first element of each row the same
+    # swap second and last element of each row
+    # swap third and second last element of each row
+    for i in range(16):
+        res[i,1], res[i,7] = res[i,7], res[i,1]
+        res[i,2], res[i,6] = res[i,6], res[i,2]
+        res[i,3], res[i,5] = res[i,5], res[i,3]
+    
+    # swap first 4 rows with last 4 rows
+    res[0:4], res[12:16] = res[12:16], res[0:4].copy()
+    # swap second 4 rows with second last 4 rows
+    res[4:8], res[8:12] = res[8:12], res[4:8].copy()
+
+    res = np.reshape(res, (128,))
     
     """ Your code ends here """
-    
     return res
 
 def create_mirror_descriptors(img):
@@ -584,6 +599,12 @@ def create_mirror_descriptors(img):
     '''
     
     """ Your code starts here """
+    kps, descs, sizes, angles = compute_cv2_descriptor(img)
+
+    mir_descs = []
+    for desc in descs:
+        mir_descs.append(shift_sift_descriptor(desc))
+    mir_descs = np.array(mir_descs)
     
     """ Your code ends here """
     
@@ -601,7 +622,25 @@ def match_mirror_descriptors(descs, mirror_descs, threshold = 0.7):
 
     
     """ Your code starts here """
+    # eliminate the mirror descriptor that comes from the same keypoint
+    for keypoint, match in three_matches:
+        if match[0][0] == keypoint:
+            match.remove((keypoint, 0.0))
     
+    three_matches = np.array(three_matches)
+
+    # perform ratio test on the two matches left
+    for kp, match in three_matches:
+        if match[0][1] / match[1][1] < threshold:
+            match_result.append((kp, match[0][0]))
+        
+    
+    match_result = np.array(match_result)
+
+
+    
+
+
     """ Your code ends here """
     
     return match_result
