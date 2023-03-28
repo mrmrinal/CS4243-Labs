@@ -319,10 +319,65 @@ def compute_homography(src, dst):
     h_matrix = np.eye(3, dtype=np.float64)
   
     """ Your code starts here """
-    
-    """ Your code ends here """
 
-    return h_matrix
+    # start with normaliszation
+
+    average_src_x = np.mean([i[0] for i in src])
+    average_src_y = np.mean([i[1] for i in src])
+    average_dst_x = np.mean([i[0] for i in dst])
+    average_dst_y = np.mean([i[1] for i in dst])
+
+
+    stddev_src_x = np.std([i[0] for i in src])
+    stddev_src_y = np.std([i[1] for i in src])
+    stddev_dst_x = np.std([i[0] for i in dst])
+    stddev_dst_y = np.std([i[1] for i in dst])
+
+    # dlt
+
+    T_src = [[(1/stddev_src_x), 0, (-average_src_x/stddev_src_x)],
+             [0, (1/stddev_src_y), (-average_src_y/stddev_src_y)],
+             [0, 0, 1]]
+    
+    T_dst = [[1/stddev_dst_x, 0, -average_dst_x/stddev_dst_x],
+             [0, 1/stddev_dst_y, -average_dst_y/stddev_dst_y],
+             [0, 0, 1]]
+    
+
+    src = np.insert(src, 2, 1, axis=1)
+    dst = np.insert(dst, 2, 1, axis=1)
+
+    normalised_src = np.matmul(T_src, np.matrix.transpose(src))
+    normalised_dst = np.matmul(T_dst, np.matrix.transpose(dst))
+
+    normalised_src = np.matrix.transpose(normalised_src)
+    normalised_dst = np.matrix.transpose(normalised_dst)
+
+
+
+    # for each transformation, calculate the Ai matrix
+
+    a = np.zeros(shape=(2 * len(src), 9))
+    counter = 0
+
+    for i in range(len(src)):
+        x_src, y_src, throwaway = normalised_src[i]
+        x_dst, y_dst, throwaway = normalised_dst[i]
+
+
+        a[counter] = [-x_src, -y_src, -1, 0, 0, 0, x_src * x_dst, y_src * x_dst, x_dst]
+        a[counter + 1] = [0, 0, 0, -x_src, -y_src, -1, x_src *y_dst, y_src * y_dst, y_dst]
+        counter = counter + 2
+    
+    u, s, vh = np.linalg.svd(a)
+
+    homography = vh[-1].reshape((3,3))
+
+    homography =  homography/homography[2,2]
+
+    # denormalisation
+    return np.matmul(np.matmul(np.linalg.inv(T_dst),homography), T_src)
+
 
 def ransac_homography(keypoints1, keypoints2, matches, sampling_ratio=0.5, n_iters=500, delta=20):
     """
@@ -350,15 +405,63 @@ def ransac_homography(keypoints1, keypoints2, matches, sampling_ratio=0.5, n_ite
     N = matches.shape[0]
     n_samples = int(N * sampling_ratio)
 
-    matched1_unpad = keypoints1[matches[:,0]]
-    matched2_unpad = keypoints2[matches[:,1]]
+    # matched1_unpad = keypoints1[matches[:,0]]
+    # matched2_unpad = keypoints2[matches[:,1]]
 
-    max_inliers = np.zeros(N)
-    n_inliers = 0
+    # max_inliers = np.zeros(N)
+    # n_inliers = 0
 
     # RANSAC iteration start
     
     """ Your code starts here """
+    best_inlier = 0
+    best_h = None
+    max_inlier = []
+
+    for i in range(n_iters):
+
+    # randomly seelct a number of points
+        np.random.shuffle(matches)
+        current_batch = matches[:n_samples, :]
+
+        src = keypoints2[current_batch[:, 1]]
+        dst = keypoints1[current_batch[:, 0]]
+
+        h = compute_homography(src, dst)
+
+        # use homography to calculate the new dsts
+        new_dst =transform_homography(src, h)
+        
+        #compare new dsts to actual dsts
+        inlier = 0
+        current_inliers = []
+        for i in range(len(new_dst)):
+            dist = np.linalg.norm(new_dst[i] - dst[i])
+            if dist <= delta :
+                # consider as inlier
+                inlier += 1
+                current_inliers.append(current_batch[i])
+        
+        if inlier > best_inlier:
+            inlier = best_inlier
+            best_h = h
+            max_inlier = current_inliers
+
+    
+    return best_h, np.array(max_inlier)
+        
+
+
+
+
+
+        # check the accuracy
+
+
+
+        # fit model with current_batch
+
+
     
     """ Your code ends here """
     
