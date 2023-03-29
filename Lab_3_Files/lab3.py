@@ -421,8 +421,8 @@ def ransac_homography(keypoints1, keypoints2, matches, sampling_ratio=0.5, n_ite
         np.random.shuffle(matches)
         current_batch = matches[:n_samples, :]
 
-        src = keypoints2[current_batch[:, 1]]
-        dst = keypoints1[current_batch[:, 0]]
+        dst = keypoints2[current_batch[:, 1]]
+        src = keypoints1[current_batch[:, 0]]
 
         h = compute_homography(src, dst)
 
