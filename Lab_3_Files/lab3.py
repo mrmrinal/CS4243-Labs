@@ -379,13 +379,11 @@ def compute_homography(src, dst):
 def ransac_homography(keypoints1, keypoints2, matches, sampling_ratio=0.5, n_iters=500, delta=20):
     """
     Use RANSAC to find a robust affine transformation
-
         1. Select random set of matches
         2. Compute affine transformation matrix
         3. Compute inliers
         4. Keep the largest set of inliers
         5. Re-compute least-squares estimate on all of the inliers
-
     Args:
         keypoints1: M1 x 2 matrix, each row is a point
         keypoints2: M2 x 2 matrix, each row is a point
@@ -394,29 +392,27 @@ def ransac_homography(keypoints1, keypoints2, matches, sampling_ratio=0.5, n_ite
         sampling_ratio: percentage of points selected at each iteration
         n_iters: the number of iterations RANSAC will run
         threshold: the threshold to find inliers
-
     Returns:
         H: a robust estimation of affine transformation from keypoints2 to
-        keypoints1
+        keypoints 1
     """
     N = matches.shape[0]
     n_samples = int(N * sampling_ratio)
 
-    # matched1_unpad = keypoints1[matches[:,0]]
-    # matched2_unpad = keypoints2[matches[:,1]]
+    matched1_unpad = keypoints1[matches[:,0]]
+    matched2_unpad = keypoints2[matches[:,1]]
 
-    # max_inliers = np.zeros(N)
-    # n_inliers = 0
+    max_inliers = np.zeros(N)
+    n_inliers = 0
 
     # RANSAC iteration start
-    
-    """ Your code starts here """
-    best_inlier = 0
-    best_h = None
-    max_inlier = []
-
+    ### YOUR CODE HERE
     for i in range(n_iters):
+        sample = np.random.choice(N, n_samples, replace=False)
+        matched1 = matched1_unpad[sample]
+        matched2 = matched2_unpad[sample]
 
+<<<<<<< HEAD
     # randomly seelct a number of points
         np.random.shuffle(matches)
         current_batch = matches[:n_samples, :]
@@ -428,40 +424,25 @@ def ransac_homography(keypoints1, keypoints2, matches, sampling_ratio=0.5, n_ite
 
         # use homography to calculate the new dsts
         new_dst =transform_homography(src, h)
+=======
+        H = compute_homography(matched1, matched2)
+>>>>>>> a213a2599829e3bad56abbc79c813ff3ac4f434d
         
-        #compare new dsts to actual dsts
-        inlier = 0
-        current_inliers = []
-        for i in range(len(new_dst)):
-            dist = np.linalg.norm(new_dst[i] - dst[i])
-            if dist <= delta :
-                # consider as inlier
-                inlier += 1
-                current_inliers.append(current_batch[i])
+        # project points from image 2 to image 1
+        projected_points = transform_homography(matched1_unpad, H)
+
+        # calculate distance between projected points and matched points
+        distance = np.linalg.norm(projected_points - matched2_unpad, axis=1)
+
+        inliers = np.where(distance < delta)[0]
+
+        if len(inliers) > n_inliers:
+            max_inliers = inliers
+            n_inliers = len(inliers)
         
-        if inlier > best_inlier:
-            inlier = best_inlier
-            best_h = h
-            max_inlier = current_inliers
+    H = compute_homography(matched1_unpad[max_inliers], matched2_unpad[max_inliers])
 
-    
-    return best_h, np.array(max_inlier)
-        
-
-
-
-
-
-        # check the accuracy
-
-
-
-        # fit model with current_batch
-
-
-    
-    """ Your code ends here """
-    
+    ### END YOUR CODE
     return H, matches[max_inliers]
 
 ##### Part 3: Mirror Symmetry Detection #####
@@ -587,7 +568,6 @@ def shift_sift_descriptor(desc):
     res[4:8], res[8:12] = res[8:12], res[4:8].copy()
 
     res = np.reshape(res, (128,))
-    
     """ Your code ends here """
     return res
 
@@ -636,11 +616,6 @@ def match_mirror_descriptors(descs, mirror_descs, threshold = 0.7):
         
     
     match_result = np.array(match_result)
-
-
-    
-
-
     """ Your code ends here """
     
     return match_result
