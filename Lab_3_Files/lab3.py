@@ -413,8 +413,6 @@ def ransac_homography(keypoints1, keypoints2, matches, sampling_ratio=0.5, n_ite
         matched2 = matched2_unpad[sample]
 
         H = compute_homography(matched1, matched2)
-
-        # Matched keypoints are considered inliers if the projected point from one image lies within distance δ to the matched point on the other point.
         
         # project points from image 2 to image 1
         projected_points = transform_homography(matched1_unpad, H)
@@ -604,11 +602,6 @@ def match_mirror_descriptors(descs, mirror_descs, threshold = 0.7):
         
     
     match_result = np.array(match_result)
-
-
-    
-
-
     """ Your code ends here """
     
     return match_result
@@ -624,23 +617,6 @@ def find_symmetry_lines(matches, kps):
     thetas = []
     
     """ Your code starts here """
-    for match in matches:
-        # get the coordinates of the matched keypoints
-        x1, y1 = kps[match[0]].pt
-        x2, y2 = kps[match[1]].pt
-
-        # compute the candidate symmetry line
-        rho = (x1 + x2) / 2
-        theta = np.arctan2(y2 - y1, x2 - x1)
-        rhos.append(rho)
-        thetas.append(theta)
-
-    rhos = np.array(rhos)
-    thetas = np.array(thetas)
-
-
-
-    
     
     """ Your code ends here """
     
