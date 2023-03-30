@@ -412,21 +412,7 @@ def ransac_homography(keypoints1, keypoints2, matches, sampling_ratio=0.5, n_ite
         matched1 = matched1_unpad[sample]
         matched2 = matched2_unpad[sample]
 
-<<<<<<< HEAD
-    # randomly seelct a number of points
-        np.random.shuffle(matches)
-        current_batch = matches[:n_samples, :]
-
-        dst = keypoints2[current_batch[:, 1]]
-        src = keypoints1[current_batch[:, 0]]
-
-        h = compute_homography(src, dst)
-
-        # use homography to calculate the new dsts
-        new_dst =transform_homography(src, h)
-=======
         H = compute_homography(matched1, matched2)
->>>>>>> a213a2599829e3bad56abbc79c813ff3ac4f434d
         
         # project points from image 2 to image 1
         projected_points = transform_homography(matched1_unpad, H)
@@ -629,14 +615,23 @@ def find_symmetry_lines(matches, kps):
     '''
     rhos = []
     thetas = []
-    
     """ Your code starts here """
+    for match in matches:
+        kp1 = kps[match[0]]
+        kp2 = kps[match[1]]
+        theta = angle_with_x_axis(kp1,kp2)
+
+        mx, my = midpoint(kp1, kp2)
+
+        rho = my * np.cos(theta) + mx * np.sin(theta)
+        rhos.append(rho)
+        thetas.append(theta)
     
     """ Your code ends here """
-    
+
     return rhos, thetas
 
-def hough_vote_mirror(matches, kps, im_shape, window=1, threshold=0.5, num_lines=1):
+def hough_vote_mirror(matches, kps, im_shape, window=5, threshold=0.5, num_lines=1):
     '''
     Hough Voting:
                  0<=thetas<= 2pi      , interval size = 1 degree
@@ -644,12 +639,33 @@ def hough_vote_mirror(matches, kps, im_shape, window=1, threshold=0.5, num_lines
     Feel free to vary the interval size.
     '''
     rhos, thetas = find_symmetry_lines(matches, kps)
-    
+
+    (r,c) = im_shape
+    diagonal = math.ceil(np.sqrt(r*r + c*c))
+    r_step = window - 3
+
+    t_max = 2 * np.pi
+    t_min = 0
+    t_step = float(np.pi/180)
+
     """ Your code starts here """
-    
-    """ Your code ends here """
-    
-    return rho_values, theta_values
+
+    r2 = np.arange(-1 * diagonal, diagonal + r_step, r_step)
+    t2 = np.arange(t_min, t_max + t_step, t_step)
+    A = np.zeros((r2.shape[0], t2.shape[0]))
+    for i in range(len(rhos)):
+        # for each rho and theta, vote for the nearest one
+        try:
+            r_idx = int((rhos[i] + diagonal) / r_step)
+            t_idx = int(thetas[i] / t_step)
+            A[r_idx][t_idx] += 1
+        except:
+            continue
+        
+    a = find_peak_params(A, [r2,t2], window, threshold)
+
+    # return rhos,thetas
+    return a[1][:num_lines],  a[2][:num_lines]
 
 
 
