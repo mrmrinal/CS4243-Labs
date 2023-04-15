@@ -183,7 +183,33 @@ def features_from_filter_bank(image, kernels):
         
     """
     # TASK 2.1 #
+    #convert image to CIELab color space
+    img = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
 
+    feats = []
+
+    L_channel = img[:,:,0]
+    a_channel = img[:,:,1]
+    b_channel = img[:,:,2]
+
+    gaussian_kernels = kernels['gaussian']
+    LoG_kernels = kernels['LoG']
+    gaussian_derivative_kernels = kernels['gaussian_derivative']
+
+    for i in range(len(gaussian_kernels)):
+        feats.append(cv2.filter2D(L_channel, -1, gaussian_kernels[i]))
+        feats.append(cv2.filter2D(a_channel, -1, gaussian_kernels[i]))
+        feats.append(cv2.filter2D(b_channel, -1, gaussian_kernels[i]))
+    
+    for i in range(len(gaussian_derivative_kernels)):
+        feats.append(cv2.filter2D(L_channel, -1, gaussian_derivative_kernels[i]))
+    
+    for i in range(len(LoG_kernels)):
+        feats.append(cv2.filter2D(L_channel, -1, LoG_kernels[i]))
+    
+    feats = np.array(feats)
+
+    feats = np.transpose(feats, (1,2,0))
 
     # TASK 2.1 #
     return feats
@@ -197,6 +223,8 @@ class Textonization:
     def __init__(self, kernels, n_clusters=200):
         self.n_clusters = n_clusters
         self.kernels = kernels
+        self.cluster_centers = None
+        self.kd_tree = None
 
     def training(self, training_imgs):
         """Takes all training images as input and stores the clustering centers for testing.
@@ -206,10 +234,21 @@ class Textonization:
             
         """
         # TASK 2.2 #
+        descriptors = []
+        for img in training_imgs:
+            feats = features_from_filter_bank(img, self.kernels)
+            descriptors.append(feats.reshape(-1, 17))
+        
+        descriptors = np.vstack(descriptors)
+
+        kmeans = MiniBatchKMeans(n_clusters=self.n_clusters, random_state=0, batch_size=1000)
+        kmeans.fit(descriptors)
+        self.cluster_centers = kmeans.cluster_centers_
+        self.kd_tree = KDTree(self.cluster_centers, leaf_size=2)
 
         # TASK 2.2 #
         
-        pass
+    
 
     def testing(self, img):
         """Predict the texture label for each pixel of the input testing image. For each pixel in the test image, an ID from a learned texton dictionary can represent it. 
@@ -222,9 +261,12 @@ class Textonization:
         
         """
         # TASK 2.2 #
+        feats = features_from_filter_bank(img, self.kernels)
+        feats = feats.reshape(-1, 17)
+        textons = self.kd_tree.query(feats, k=1, return_distance=False)
+        textons = textons.reshape(img.shape[0], img.shape[1], 1)
 
         # TASK 2.2 #
-        
         return textons
 
     
