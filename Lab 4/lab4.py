@@ -241,7 +241,7 @@ class Textonization:
         
         descriptors = np.vstack(descriptors)
 
-        kmeans = MiniBatchKMeans(n_clusters=self.n_clusters, random_state=0, batch_size=1000)
+        kmeans = MiniBatchKMeans(n_clusters=7)
         kmeans.fit(descriptors)
         self.cluster_centers = kmeans.cluster_centers_
         self.kd_tree = KDTree(self.cluster_centers, leaf_size=2)
@@ -284,7 +284,21 @@ def histogram_per_pixel(textons, window_size):
     """
    
     # TASK 2.3 #
+    stride = 1
+    img_shape = textons.shape[:-1]
+    indices = np.arange(window_size)
+    offset = (window_size - 1) // 2
 
+    hists = np.zeros((img_shape[0], img_shape[1], 200))
+
+    for i in range(0, img_shape[0], stride):
+        for j in range(0, img_shape[1], stride):
+            window = textons[max(0, i - offset):min(img_shape[0], i + offset + 1), max(0, j - offset):min(img_shape[1], j + offset + 1)]
+            hist, _ = np.histogram(window, bins=200, range=(0, 200))
+            hists[i, j] = hist
+    
+    hists.reshape(img_shape[0], img_shape[1], 200)
+    
     # TASK 2.3 #
     
     return hists
