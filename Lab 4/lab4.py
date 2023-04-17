@@ -37,9 +37,15 @@ def calcOpticalFlowHS(prevImg: np.array, nextImg: np.array, param_lambda: float,
     y_kernel = np.array([[-1, -1], [1, 1]]) * 0.25
     t_kernel = np.ones((2, 2)) * 0.25
 
-    Ix = convolve(prevImg,x_kernel) + convolve(nextImg,x_kernel)
-    Iy = convolve(prevImg, y_kernel) + convolve(nextImg, y_kernel)
+    Ix = convolve(prevImg,x_kernel) 
+    Iy = convolve(prevImg, y_kernel) 
     It = convolve(prevImg, -t_kernel) + convolve(nextImg, t_kernel)
+
+
+    # Ix = convolve(prevImg, np.array([[-1, 1], [-1, 1]]))
+    # Iy = convolve(prevImg, np.array([[-1, -1], [1, 1]]))
+    # It = convolve(prevImg, np.array([[1, 1], [1, 1]])) + convolve(nextImg, np.array([[1, 1], [1, 1]]))
+    
 
     avg_kernel = np.array([[0, 1 / 4, 0],
                             [1 / 4, 0, 1 / 4],
@@ -49,10 +55,8 @@ def calcOpticalFlowHS(prevImg: np.array, nextImg: np.array, param_lambda: float,
     u = np.zeros_like(prevImg)
     v = np.zeros_like(prevImg)
 
-    count = 300
     while True:
 
-        count -= 1
         u_avg = convolve(u, avg_kernel)
         v_avg = convolve(v, avg_kernel)
 
@@ -63,8 +67,6 @@ def calcOpticalFlowHS(prevImg: np.array, nextImg: np.array, param_lambda: float,
         diff = np.linalg.norm(u - u_new, 2)
 
         if diff < param_delta:
-            break
-        if count == 0:
             break
 
         u = u_new
@@ -88,6 +90,20 @@ def combine_and_normalize_features(feat1: np.array, feat2: np.array, gamma: floa
         
     """
     # TASK 1.2 #
+
+
+    feat1_mean = np.mean(feat1)
+    feat1_std = np.std(feat1)
+    feat1_norm = (feat1 - feat1_mean) / feat1_std
+
+    feat2_mean = np.mean(feat2)
+    feat2_std = np.std(feat2)
+    feat2_norm = (feat2 - feat2_mean) / feat2_std
+    feat2_scaled = feat2_norm * gamma
+
+
+    feats = np.concatenate((feat1_norm, feat2_scaled), axis=-1)
+
 
     # TASK 1.2 #
     
