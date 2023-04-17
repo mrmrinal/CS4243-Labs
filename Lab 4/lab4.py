@@ -40,6 +40,11 @@ def calcOpticalFlowHS(prevImg: np.array, nextImg: np.array, param_lambda: float,
     Ix = convolve(prevImg,x_kernel) 
     Iy = convolve(prevImg, y_kernel) 
     It = convolve(prevImg, -t_kernel) + convolve(nextImg, t_kernel)
+
+
+    # Ix = convolve(prevImg, np.array([[-1, 1], [-1, 1]]))
+    # Iy = convolve(prevImg, np.array([[-1, -1], [1, 1]]))
+    # It = convolve(prevImg, np.array([[1, 1], [1, 1]])) + convolve(nextImg, np.array([[1, 1], [1, 1]]))
     
 
     avg_kernel = np.array([[0, 1 / 4, 0],
@@ -58,7 +63,8 @@ def calcOpticalFlowHS(prevImg: np.array, nextImg: np.array, param_lambda: float,
         u_new = u_avg - (Ix * (Ix * u_avg + Iy * v_avg) + It * Ix) / (param_lambda**-1 + Ix**2 + Iy**2)
         v_new = v_avg - (Iy * (Ix * u_avg + Iy * v_avg) + It * Iy) / (param_lambda**-1 + Ix**2 + Iy**2)
 
-        diff = np.linalg.norm(u - u_new,2)
+        #converges check (at most 300 iterations)
+        diff = np.linalg.norm(u - u_new, 2)
 
         if diff < param_delta:
             break
@@ -66,7 +72,9 @@ def calcOpticalFlowHS(prevImg: np.array, nextImg: np.array, param_lambda: float,
         u = u_new
         v = v_new
         
+    # Stack u and v along the third dimension to create the flow image
     flow_img = np.stack((u, v), axis=2)
+
     return flow_img
     
 # TASK 1.2 #
@@ -228,7 +236,7 @@ from sklearn.cluster import MiniBatchKMeans
 from sklearn.neighbors import KDTree
 
 class Textonization:
-    def __init__(self, kernels, n_clusters=200):
+    def __init__(self, kernels, n_clusters=7):
         self.n_clusters = n_clusters
         self.kernels = kernels
         self.cluster_centers = None
@@ -242,17 +250,13 @@ class Textonization:
             
         """
         # TASK 2.2 #
-        descriptors = []
+        kmeans = MiniBatchKMeans(n_clusters=self.n_clusters)
         for img in training_imgs:
             feats = features_from_filter_bank(img, self.kernels)
-            descriptors.append(feats.reshape(-1, 17))
-        
-        descriptors = np.vstack(descriptors)
+            kmeans.partial_fit(feats.reshape(-1, 17))
 
-        kmeans = MiniBatchKMeans(n_clusters=7)
-        kmeans.fit(descriptors)
         self.cluster_centers = kmeans.cluster_centers_
-        self.kd_tree = KDTree(self.cluster_centers, leaf_size=2)
+        self.kd_tree = KDTree(self.cluster_centers)
 
         # TASK 2.2 #
         
@@ -294,19 +298,15 @@ def histogram_per_pixel(textons, window_size):
     # TASK 2.3 #
     stride = 1
     img_shape = textons.shape[:-1]
-    indices = np.arange(window_size)
     offset = (window_size - 1) // 2
 
-    hists = np.zeros((img_shape[0], img_shape[1], 200))
+    hists = np.zeros((img_shape[0], img_shape[1], 7))
 
     for i in range(0, img_shape[0], stride):
         for j in range(0, img_shape[1], stride):
             window = textons[max(0, i - offset):min(img_shape[0], i + offset + 1), max(0, j - offset):min(img_shape[1], j + offset + 1)]
-            hist, _ = np.histogram(window, bins=200, range=(0, 200))
+            hist, _ = np.histogram(window, bins=7, range=(0, 7))
             hists[i, j] = hist
-    
-    hists.reshape(img_shape[0], img_shape[1], 200)
-    
     # TASK 2.3 #
     
     return hists
